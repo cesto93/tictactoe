@@ -41,7 +41,7 @@ func actions(board [3][3]string) [][2]int{
 	return actions
 }
 
-func result(board [3][3]string, action [2]int) ([3][3]string, error){
+func Result(board [3][3]string, action [2]int) ([3][3]string, error){
 	x, y := action[0], action[1]
 	if board[x][y] != "" {
 		return [3][3]string{}, errors.New("illegal move")
@@ -94,7 +94,7 @@ func maxval(board [3][3]string) (int, error) {
 	}
 
 	for _, action := range actions(board) {
-		res, err := result(board,action)
+		res, err := Result(board,action)
 		if err != nil {
 			return 0, err
 		}
@@ -115,7 +115,7 @@ func minval(board [3][3]string) (int, error) {
 		return utility(board), nil
 	}
 	for _, action := range actions(board) {
-		res, err := result(board,action)
+		res, err := Result(board,action)
 		if err != nil {
 			return 0, err
 		}
@@ -152,7 +152,7 @@ func Minmax(board [3][3]string) (*[2]int, error) {
 	}
 
 	for _, action:= range actions(board) {
-		res, err := result(board,action)
+		res, err := Result(board,action)
 		if err != nil {
 			return nil, err
 		}

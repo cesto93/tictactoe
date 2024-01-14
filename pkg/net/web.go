@@ -3,18 +3,27 @@ package net
 import (
 	"html/template"
 	"net/http"
+	"strconv"
+	"tictactoe/pkg/tictactoe"
 )
 
 // Page struct represents the data to be passed to the HTML template
 type Page struct {
 	Title   string
 	Content string
-	SelectedSymbol string `json:"selectedSymbol"`
 }
+
+type Game struct {
+	Player string
+	Board [3][3] string
+}
+
+var globalGame Game
 
 func StartWeb(){
 	http.HandleFunc("/", mainHandler)
 	http.HandleFunc("/select", selectHandler)
+	http.HandleFunc("/play", playHandler)
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -23,7 +32,6 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	page := Page{
 		Title:   "TicTacToe",
 		Content: "Choice X or O to play",
-		SelectedSymbol: "",
 	}
 
 	// Parse the HTML template
@@ -48,9 +56,16 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 					cursor: pointer;
 				}
 
-				#result {
-					font-size: 24px;
-					margin-top: 20px;
+				.grid-container {
+			            display: grid;
+			            grid-template-columns: repeat(3, 1fr);
+			            gap: 10px;
+			    }
+
+			    .grid-item {
+					border: 1px solid #ccc;
+					padding: 20px;
+					text-align: center;
 				}
 			</style>
 		</head>
@@ -78,12 +93,66 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func selectHandler(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the selected symbol from the request
 	symbol := r.FormValue("symbol")
 
-	// Set the content type to JSON
 	w.Header().Set("Content-Type", "application/json")
 
-	// Write the JSON response
-	w.Write([]byte("You selected: " + symbol))
+	tmpl, err := template.New("index").Parse(`
+	<p>You are the player {{.Player}}</p>
+	<div class="grid-container">
+		{{range $x, $els := .Board}}
+			{{range $y, $el := $els}}
+				<div class="grid-item">
+				<button hx-post="/play" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"x" : "{{$x}}", "y" : "{{$y}}"}'> {{.}} </button>
+				</div>
+			{{end}}
+		{{end}}
+	</div>
+	`)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	globalGame = Game {
+		Board: tictactoe.Init_state(),	
+		Player: symbol,
+	}
+
+	err = tmpl.Execute(w, globalGame)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func playHandler(w http.ResponseWriter, r *http.Request) {
+	x, err := strconv.Atoi(r.FormValue("x"))
+
+	y, err := strconv.Atoi(r.FormValue("y"))
+
+	w.Header().Set("Content-Type", "application/json")
+
+	tmpl, err := template.New("index").Parse(`
+	<p>You are the player {{.Player}}</p>
+	<div class="grid-container">
+		{{range $x, $els := .Board}}
+			{{range $y, $el := $els}}
+				<div class="grid-item">
+				<button hx-post="/play" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"x" : "{{$x}}", "y" : "{{$y}}"}'> {{.}} </button>
+				</div>
+			{{end}}
+		{{end}}
+	</div>
+	`)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	globalGame.Board[x][y] = globalGame.Player
+
+	err = tmpl.Execute(w, globalGame)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
