@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"strconv"
 	"tictactoe/pkg/tictactoe"
+
+	"github.com/sirupsen/logrus"
 )
 
-// Page struct represents the data to be passed to the HTML template
 type Page struct {
 	Title   string
 	Content string
@@ -16,11 +17,14 @@ type Page struct {
 type Game struct {
 	Player string
 	Board [3][3] string
+	Winner string
+	Terminal bool
 }
 
 var globalGame Game
 
 func StartWeb(){
+	logrus.SetReportCaller(true)
 	http.HandleFunc("/", mainHandler)
 	http.HandleFunc("/select", selectHandler)
 	http.HandleFunc("/play", playHandler)
@@ -28,13 +32,11 @@ func StartWeb(){
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
-	// Define the data to be passed to the HTML template
 	page := Page{
 		Title:   "TicTacToe",
-		Content: "Choice X or O to play",
+		Content: "Choice X or O to play, X is first",
 	}
 
-	// Parse the HTML template
 	tmpl, err := template.New("index").Parse(`
 		<!DOCTYPE html>
 		<html>
@@ -119,6 +121,13 @@ func selectHandler(w http.ResponseWriter, r *http.Request) {
 		Player: symbol,
 	}
 
+	if globalGame.Player != tictactoe.X {
+		err := cpuPlay(&globalGame)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logrus.Errorf("err %+v", err)
+		return
+	}
+
 	err = tmpl.Execute(w, globalGame)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -127,32 +136,66 @@ func selectHandler(w http.ResponseWriter, r *http.Request) {
 
 func playHandler(w http.ResponseWriter, r *http.Request) {
 	x, err := strconv.Atoi(r.FormValue("x"))
-
-	y, err := strconv.Atoi(r.FormValue("y"))
-
-	w.Header().Set("Content-Type", "application/json")
-
-	tmpl, err := template.New("index").Parse(`
-	<p>You are the player {{.Player}}</p>
-	<div class="grid-container">
-		{{range $x, $els := .Board}}
-			{{range $y, $el := $els}}
-				<div class="grid-item">
-				<button hx-post="/play" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"x" : "{{$x}}", "y" : "{{$y}}"}'> {{.}} </button>
-				</div>
-			{{end}}
-		{{end}}
-	</div>
-	`)
 	if err != nil {
+		logrus.Errorf("err %+v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	globalGame.Board[x][y] = globalGame.Player
+	y, err := strconv.Atoi(r.FormValue("y"))
+	if err != nil {
+		logrus.Errorf("err %+v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	tmpl, err := template.New("index").Parse(`
+	<p>You are the {{.Player}}</p>
+	<div class="grid-container">
+		{{range $x, $els := .Board}}
+			{{range $y, $el := $els}}
+				<div class="grid-item">
+				{{ if eq . "" }}
+					<button hx-post="/play" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"x" : "{{$x}}", "y" : "{{$y}}"}'> {{.}} </button>
+				{{ else }}
+					<button hx-post="/play" disabled hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"x" : "{{$x}}", "y" : "{{$y}}"}'> {{.}} </button>
+				{{ end }}
+				</div>
+			{{end}}
+		{{end}}
+
+	</div>
+
+	{{ if .Terminal }}
+	<p> The Winner is {{.Winner}} </p>
+	{{ end }}
+	`)
+	if err != nil {
+		logrus.Errorf("err %+v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = playerPlay(&globalGame, [2]int{x,y})
+	if err != nil {
+		logrus.Errorf("err %+v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = cpuPlay(&globalGame)	
+	if err != nil {
+		logrus.Errorf("err %+v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	err = tmpl.Execute(w, globalGame)
 	if err != nil {
+		logrus.Errorf("err %+v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }

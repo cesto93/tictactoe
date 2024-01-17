@@ -2,7 +2,6 @@ package tictactoe
 
 import (
 	"errors"
-	"log"
 )
 
 const (
@@ -54,7 +53,7 @@ func Result(board Board, action [2]int) (Board, error){
 	return board, nil
 }
 
-func winner(board Board) string {
+func Winner(board Board) string {
 	for i:= 0; i < 3; i++ {
 		if board[i][0] != "" && board[i][0] == board[i][1] && board[i][1] == board[i][2] {
 				return board[i][0]
@@ -75,8 +74,8 @@ func winner(board Board) string {
 	return ""
 }
 
-func terminal(board Board) bool{
-	if winner(board) != "" {
+func Terminal(board Board) bool{
+	if Winner(board) != "" {
 		return true
 	}
 
@@ -84,7 +83,7 @@ func terminal(board Board) bool{
 }
 
 func utility(board Board) int {
-	switch winner(board) {
+	switch Winner(board) {
 		case X: return 1
 		case O: return -1
 		default: return 0
@@ -93,7 +92,7 @@ func utility(board Board) int {
 
 func maxval(board Board) (int, error) {
 	v := -2
-	if terminal(board) {
+	if Terminal(board) {
 		return utility(board), nil
 	}
 
@@ -115,7 +114,7 @@ func maxval(board Board) (int, error) {
 
 func minval(board Board) (int, error) {
 	v := +2
-	if terminal(board) {
+	if Terminal(board) {
 		return utility(board), nil
 	}
 	for _, action := range actions(board) {
@@ -141,7 +140,7 @@ func Minmax(board Board) (*[2]int, error) {
 	var v int
 	var isMin bool
 
-	if terminal(board) {
+	if Terminal(board) {
 		return nil, nil
 	}
 	
@@ -156,7 +155,6 @@ func Minmax(board Board) (*[2]int, error) {
 	}
 
 	for _, action:= range actions(board) {
-		log.Printf("action %v\n", action)
 		res, err := Result(board,action)
 		if err != nil {
 			return nil, err
