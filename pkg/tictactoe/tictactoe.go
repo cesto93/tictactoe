@@ -2,18 +2,22 @@ package tictactoe
 
 import (
 	"errors"
+	"log"
 )
 
 const (
 	X = "X"
 	O = "O"
+	EMPTY = ""
 )
 
-func Init_state() [3][3]string {
+type Board [3][3]string
+
+func Init_state() Board {
 	return [3][3]string{}
 }
 
-func player(board [3][3]string) string{
+func player(board Board) string{
 	moves := 0
 	for i:= 0; i < 3; i++ {
 		for j:=0; j < 3; j++ {
@@ -29,11 +33,11 @@ func player(board [3][3]string) string{
 	}
 }
 
-func actions(board [3][3]string) [][2]int{
+func actions(board Board) [][2]int{
 	actions := make([][2]int, 0)
 	for i:= 0; i < 3; i++ {
 		for j:=0; j < 3; j++ {
-			if board[i][j] != "" {
+			if board[i][j] == "" {
 				actions = append(actions, [2]int{i,j})
 			}
 		}
@@ -41,16 +45,16 @@ func actions(board [3][3]string) [][2]int{
 	return actions
 }
 
-func Result(board [3][3]string, action [2]int) ([3][3]string, error){
+func Result(board Board, action [2]int) (Board, error){
 	x, y := action[0], action[1]
 	if board[x][y] != "" {
-		return [3][3]string{}, errors.New("illegal move")
+		return Board{}, errors.New("illegal move")
 	}
 	board[x][y] = player(board)
 	return board, nil
 }
 
-func winner(board [3][3]string) string {
+func winner(board Board) string {
 	for i:= 0; i < 3; i++ {
 		if board[i][0] != "" && board[i][0] == board[i][1] && board[i][1] == board[i][2] {
 				return board[i][0]
@@ -71,7 +75,7 @@ func winner(board [3][3]string) string {
 	return ""
 }
 
-func terminal(board [3][3]string) bool{
+func terminal(board Board) bool{
 	if winner(board) != "" {
 		return true
 	}
@@ -79,7 +83,7 @@ func terminal(board [3][3]string) bool{
 	return len(actions(board)) == 0
 }
 
-func utility(board [3][3]string) int {
+func utility(board Board) int {
 	switch winner(board) {
 		case X: return 1
 		case O: return -1
@@ -87,7 +91,7 @@ func utility(board [3][3]string) int {
 	}
 }
 
-func maxval(board [3][3]string) (int, error) {
+func maxval(board Board) (int, error) {
 	v := -2
 	if terminal(board) {
 		return utility(board), nil
@@ -109,7 +113,7 @@ func maxval(board [3][3]string) (int, error) {
 	return v, nil
 }
 
-func minval(board [3][3]string) (int, error) {
+func minval(board Board) (int, error) {
 	v := +2
 	if terminal(board) {
 		return utility(board), nil
@@ -131,9 +135,9 @@ func minval(board [3][3]string) (int, error) {
 	return v, nil
 }
 
-func Minmax(board [3][3]string) (*[2]int, error) {
-	var move [2]int
-	var eval func([3][3]string)(int, error)
+func Minmax(board Board) (*[2]int, error) {
+	var move *[2]int
+	var eval func(Board)(int, error)
 	var v int
 	var isMin bool
 
@@ -152,6 +156,7 @@ func Minmax(board [3][3]string) (*[2]int, error) {
 	}
 
 	for _, action:= range actions(board) {
+		log.Printf("action %v\n", action)
 		res, err := Result(board,action)
 		if err != nil {
 			return nil, err
@@ -163,17 +168,17 @@ func Minmax(board [3][3]string) (*[2]int, error) {
 		}
 
 		if isMin {
-			if n < v {
+			if n >= v {
 				v = n
-				move = action
+				move = &action
 			}
 		} else {
-			if n > v {
+			if n <= v {
 				v = n
-				move = action
+				move = &action
 			}
 		}
 
 	}
-	return &move, nil
+	return move, nil
 }
