@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+
 	"tictactoe/pkg/tictactoe"
 
 	"github.com/sirupsen/logrus"
@@ -15,15 +16,15 @@ type Page struct {
 }
 
 type Game struct {
-	Player string
-	Board [3][3] string
-	Winner string
+	Player   string
+	Board    [3][3]string
+	Winner   string
 	Terminal bool
 }
 
 var globalGame Game
 
-func StartWeb(){
+func StartWeb() {
 	logrus.SetReportCaller(true)
 	http.HandleFunc("/", mainHandler)
 	http.HandleFunc("/select", selectHandler)
@@ -113,19 +114,22 @@ func selectHandler(w http.ResponseWriter, r *http.Request) {
 	`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logrus.Errorf("err %+v", err)
 		return
 	}
 
-	globalGame = Game {
-		Board: tictactoe.Init_state(),	
+	globalGame = Game{
+		Board:  tictactoe.Init_state(),
 		Player: symbol,
 	}
 
 	if globalGame.Player != tictactoe.X {
 		err := cpuPlay(&globalGame)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logrus.Errorf("err %+v", err)
-		return
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			logrus.Errorf("err %+v", err)
+			return
+		}
 	}
 
 	err = tmpl.Execute(w, globalGame)
@@ -178,14 +182,14 @@ func playHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = playerPlay(&globalGame, [2]int{x,y})
+	err = playerPlay(&globalGame, [2]int{x, y})
 	if err != nil {
 		logrus.Errorf("err %+v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = cpuPlay(&globalGame)	
+	err = cpuPlay(&globalGame)
 	if err != nil {
 		logrus.Errorf("err %+v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
