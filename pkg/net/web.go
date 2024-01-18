@@ -57,10 +57,11 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		<body>
 
 			<h1>{{.Title}}</h1>
-			<p>{{.Content}}</p>
-			<button hx-post="/select" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"symbol" : "X"}'>X</button>
-			<button hx-post="/select" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"symbol" :"O"}'>O</button>
-			<div id="result"></div>
+			<div id="result">
+				<p>{{.Content}}</p>
+				<button hx-post="/select" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"symbol" : "X"}'>X</button>
+				<button hx-post="/select" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"symbol" :"O"}'>O</button>
+			</div>
 
 		</body>
 		</html>
@@ -70,7 +71,6 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Execute the template and write the result to the response writer
 	err = tmpl.Execute(w, page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
