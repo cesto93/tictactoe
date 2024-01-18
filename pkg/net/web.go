@@ -26,10 +26,18 @@ var globalGame Game
 
 func StartWeb() {
 	logrus.SetReportCaller(true)
+	
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
 	http.HandleFunc("/", mainHandler)
 	http.HandleFunc("/select", selectHandler)
 	http.HandleFunc("/play", playHandler)
-	http.ListenAndServe(":8080", nil)
+
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		logrus.Errorf("err %v", err)
+	}
 }
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
@@ -43,34 +51,8 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		<html>
 		<head>
 			<title>{{.Title}}</title>
-			<link rel="stylesheet" href="https://unpkg.com/htmx.org@1.9.10/dist/htmx.css">
-			<script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.js"></script>
-			<style>
-				body {
-					font-family: Arial, sans-serif;
-					text-align: center;
-					margin: 50px;
-				}
-
-				button {
-					font-size: 18px;
-					padding: 10px 20px;
-					margin: 10px;
-					cursor: pointer;
-				}
-
-				.grid-container {
-			            display: grid;
-			            grid-template-columns: repeat(3, 1fr);
-			            gap: 10px;
-			    }
-
-			    .grid-item {
-					border: 1px solid #ccc;
-					padding: 20px;
-					text-align: center;
-				}
-			</style>
+			<script src="/static/htmx.min.js"></script>
+			<link rel="stylesheet" href="/static/style.css">
 		</head>
 		<body>
 

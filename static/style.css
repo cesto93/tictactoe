@@ -1,0 +1,24 @@
+body {
+	font-family: Arial, sans-serif;
+	text-align: center;
+	margin: 50px;
+}
+
+button {
+	font-size: 18px;
+	padding: 10px 20px;
+	margin: 10px;
+	cursor: pointer;
+}
+
+.grid-container {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+}
+
+.grid-item {
+	border: 1px solid #ccc;
+	padding: 20px;
+	text-align: center;
+}
