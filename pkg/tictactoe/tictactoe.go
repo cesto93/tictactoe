@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	X = "X"
-	O = "O"
+	X     = "X"
+	O     = "O"
 	EMPTY = ""
 )
 
@@ -16,35 +16,35 @@ func Init_state() Board {
 	return [3][3]string{}
 }
 
-func player(board Board) string{
+func player(board Board) string {
 	moves := 0
-	for i:= 0; i < 3; i++ {
-		for j:=0; j < 3; j++ {
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
 			if board[i][j] != "" {
 				moves++
 			}
 		}
 	}
-	if moves % 2 == 0 {
+	if moves%2 == 0 {
 		return X
 	} else {
 		return O
 	}
 }
 
-func actions(board Board) [][2]int{
+func actions(board Board) [][2]int {
 	actions := make([][2]int, 0)
-	for i:= 0; i < 3; i++ {
-		for j:=0; j < 3; j++ {
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
 			if board[i][j] == "" {
-				actions = append(actions, [2]int{i,j})
+				actions = append(actions, [2]int{i, j})
 			}
 		}
 	}
 	return actions
 }
 
-func Result(board Board, action [2]int) (Board, error){
+func Result(board Board, action [2]int) (Board, error) {
 	x, y := action[0], action[1]
 	if board[x][y] != "" {
 		return Board{}, errors.New("illegal move")
@@ -54,27 +54,29 @@ func Result(board Board, action [2]int) (Board, error){
 }
 
 func Winner(board Board) string {
-	for i:= 0; i < 3; i++ {
+	for i := 0; i < 3; i++ {
 		if board[i][0] != "" && board[i][0] == board[i][1] && board[i][1] == board[i][2] {
-				return board[i][0]
+			return board[i][0]
 		}
-		
+
 		if board[0][i] != "" && board[0][i] == board[1][i] && board[1][i] == board[2][i] {
-				return board[0][i]
+			return board[0][i]
 		}
 
-		if board[1][1] != "" && board[0][0] == board[1][1] && board[1][1] == board[2][2] {
-				return board[0][0]
-		}
-
-		if board[1][1] != "" && board[0][2] == board[1][1] && board[2][0] == board[0][2] {
-				return board[0][2]
-		}
 	}
+
+	if board[1][1] != "" && board[0][0] == board[1][1] && board[1][1] == board[2][2] {
+		return board[0][0]
+	}
+
+	if board[1][1] != "" && board[0][2] == board[1][1] && board[1][1] == board[2][0] {
+		return board[0][2]
+	}
+
 	return ""
 }
 
-func Terminal(board Board) bool{
+func Terminal(board Board) bool {
 	if Winner(board) != "" {
 		return true
 	}
@@ -84,9 +86,12 @@ func Terminal(board Board) bool{
 
 func utility(board Board) int {
 	switch Winner(board) {
-		case X: return 1
-		case O: return -1
-		default: return 0
+	case X:
+		return 1
+	case O:
+		return -1
+	default:
+		return 0
 	}
 }
 
@@ -97,7 +102,7 @@ func maxval(board Board) (int, error) {
 	}
 
 	for _, action := range actions(board) {
-		res, err := Result(board,action)
+		res, err := Result(board, action)
 		if err != nil {
 			return 0, err
 		}
@@ -118,7 +123,7 @@ func minval(board Board) (int, error) {
 		return utility(board), nil
 	}
 	for _, action := range actions(board) {
-		res, err := Result(board,action)
+		res, err := Result(board, action)
 		if err != nil {
 			return 0, err
 		}
@@ -128,55 +133,57 @@ func minval(board Board) (int, error) {
 			return 0, err
 		}
 
-		v = max(v, mval)
+		v = min(v, mval)
 
 	}
 	return v, nil
 }
 
 func Minmax(board Board) (*[2]int, error) {
-	var move *[2]int
-	var eval func(Board)(int, error)
+	var move [2]int
 	var v int
-	var isMin bool
 
 	if Terminal(board) {
 		return nil, nil
 	}
-	
+
 	if player(board) == X {
 		v = -2
-		eval = minval
-		isMin = true
+		for _, action := range actions(board) {
+			res, err := Result(board, action)
+			if err != nil {
+				return nil, err
+			}
+
+			n, err := minval(res)
+			if err != nil {
+				return nil, err
+			}
+			if n > v {
+				v = n
+				move = action
+				// logrus.Infof("choose move %v util %v", move, v)
+			}
+		}
 	} else {
-		v = 2
-		eval = maxval
-		isMin = false
-	}
-
-	for _, action:= range actions(board) {
-		res, err := Result(board,action)
-		if err != nil {
-			return nil, err
-		}
-
-		n, err := eval(res)
-		if err != nil {
-			return nil, err
-		}
-
-		if isMin {
-			if n >= v {
-				v = n
-				move = &action
+		v = +2
+		for _, action := range actions(board) {
+			res, err := Result(board, action)
+			if err != nil {
+				return nil, err
 			}
-		} else {
-			if n <= v {
+
+			n, err := maxval(res)
+			if err != nil {
+				return nil, err
+			}
+			if n < v {
 				v = n
-				move = &action
+				move = action
 			}
 		}
-
 	}
-	return move, nil
+
+	// logrus.Infof("return move %v", move)
+	return &move, nil
 }
