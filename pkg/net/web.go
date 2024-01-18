@@ -59,8 +59,10 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 			<h1>{{.Title}}</h1>
 			<div id="result">
 				<p>{{.Content}}</p>
-				<button hx-post="/select" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"symbol" : "X"}'>X</button>
-				<button hx-post="/select" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"symbol" :"O"}'>O</button>
+				<div class="choice-container">
+				<button class="grid-item" hx-post="/select" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"symbol" : "X"}'>X</button>
+				<button class="grid-item" hx-post="/select" hx-trigger="click" hx-swap="innerHTML" hx-target="#result" hx-vals='{"symbol" :"O"}'>O</button>
+				</div>
 			</div>
 
 		</body>
@@ -83,7 +85,7 @@ func selectHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	tmpl, err := template.New("index").Parse(`
-	<p>You are the player {{.Player}}</p>
+	<p class="message"> You are the player {{.Player}}</p>
 	<div class="grid-container">
 		{{range $x, $els := .Board}}
 			{{range $y, $el := $els}}
