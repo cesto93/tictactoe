@@ -173,8 +173,12 @@ func playHandler(w http.ResponseWriter, r *http.Request) {
 	</div>
 
 	{{ if .Terminal }}
-	<p> The Winner is {{.Winner}} </p>
-	{{ end }}
+		{{ if eq .Winner "" }}
+			<p> Draw </p>
+		{{ else }}
+			<p> The Winner is {{.Winner}} </p>
+		{{end}}
+	{{end}}
 	`)
 	if err != nil {
 		logrus.Errorf("err %+v", err)
